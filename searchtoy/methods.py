@@ -77,7 +77,7 @@ class Method(ABC):
                     container.extend(successors)
 
         def successor_manager(generator, next):
-            """ Coroutine for handling node expansion.
+            """ Coroutine for handling node expansion (in tree search spaces).
 
                 Arguments:
                     generator: a Generator object for expanding nodes
@@ -104,7 +104,7 @@ class Method(ABC):
                     break
 
         def conditional_successor_manager(generator, next):
-            """ Coroutine for handling node expansion (in graph search spaces)
+            """ Coroutine for handling node expansion (in graph search spaces).
 
                 The function maintains a dict of the states it has encountered
                 before, along with their costs. When a node is expanded, only

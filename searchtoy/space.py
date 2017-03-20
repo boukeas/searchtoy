@@ -1,5 +1,5 @@
-### space.py: elementary components of the search space (states, nodes, paths,
-###     operators and operations).
+# space.py: contains the necessary components for manipulating the search space
+#           (states, generators, nodes, paths, operators and operations).
 
 from abc import abstractmethod
 from collections import namedtuple
@@ -7,36 +7,30 @@ from copy import deepcopy
 
 from .exceptions import MalformedOperator, GeneratorError
 
+__all__ = ['State', 'ConsistentGenerator', 'InconsistentGenerator', 'Path', 'operator', 'action']
 
-__all__ = ['State', 'Path', 'operator', 'action']
 
 class StateMeta(type):
     """ A metaclass for the State class.
 
-        This metaclass adds an 'operators' namedtuple as a State class
-        attribute, which contains all the operators for the state 
-        (i.e. operators corresponding to all the state methods decorated with
-        @operator or @action).
-    """
+        > It adds an 'operators' namedtuple as a class attribute, which
+          contains all the state operators (i.e. all state methods decorated
+          with @operator or @action). This comes in handy (syntax-wise) when
+          generating successor states.
 
-    '''
-        if not cls.__abstractmethods__ and ('graph' not in namespace or namespace['graph'] not in (True, False)):
-            raise GeneratorError("The " + clsname + " class should have a 'graph' class attribute, set to either True or False.")
-        if not cls.__abstractmethods__ and ('requires' not in namespace or not issubclass(namespace['requires'], State)):
-            raise GeneratorError("The " + clsname + " class should have a 'requires' class attribute, set to a subclass of State.")
-        if 'operations' in namespace and not isinstance(namespace['operations'], classmethod):
-            raise GeneratorError(clsname + ".operations() should be a class method")
-        if 'successors' in namespace and not isinstance(namespace['successors'], classmethod):
-            raise GeneratorError(clsname + ".successors() should be a class method")
-        if 'is_valid' in namespace and not isinstance(namespace['is_valid'], classmethod):
-            raise GeneratorError(clsname + ".is_valid() should be a class method")
-    '''
+        > It handles Generator mixins, endowing states with the capability of
+          defining their own operations() method and generating successors,
+          when there is no need to provide distinct, interchangeable generator
+          classes.
+    """
 
     def __new__(cls, clsname, bases, namespace, *, graph=True):
         return super().__new__(cls, clsname, bases, namespace)
 
     def __init__(cls, clsname, bases, namespace, *, graph=True):
         super().__init__(clsname, bases, namespace)
+
+        # part 1: handle state operators
 
         # retrieve @operator- or @action-decorated methods from namespace
         operator_mapping = {
@@ -57,47 +51,38 @@ class StateMeta(type):
             if hasattr(attribute, 'operator'):
                 delattr(attribute, 'operator')
 
-        # if ConsistentGenerator or InconsistentGenerator have been provided
-        # as mixins, then the generator functions should be implemented
-        
+        # part 2: handle Generator mixins
+
+        # retrieve Generator mixins from bases        
         generator_bases = [generator
                            for generator in bases
                            if issubclass(generator, ConsistentGenerator) or
                               issubclass(generator, InconsistentGenerator)]
 
         if len(generator_bases) > 1:
-
+            # there are multiple Generator mixins
             raise GeneratorError("Multiple Generator subclasses provided as mixins to the State subclass. " +
                                  "Use either one of ConsistentGenerator or InconsistentGenerator or " + 
                                  "attach a derived Generator to the State.")
-
         elif len(generator_bases) == 1:
-
+            # this is the Generator mixin
             generator = generator_bases[0]
-
             if 'operations' not in namespace:
+                # the operations() method is not implemented
                 raise GeneratorError(generator.__name__ + 
                                      " has been used as a mixin to the " + 
                                      clsname + " class, so " + clsname + 
-                                     ".operations() should be implemented " +
-                                     "(as a staticmethod.)")
-            elif not isinstance(namespace['operations'], staticmethod):
-                raise GeneratorError(clsname + 
-                                     ".operations() should be implemented " +
-                                     "(as a staticmethod.)")
-
+                                     ".operations() should be implemented.")
             if issubclass(generator, InconsistentGenerator):
+                # the is_valid() method is not implemented
                 if 'is_valid' not in namespace:
                     raise GeneratorError("InconsistentGenerator " +
                                      "has been used as a mixin to the " + 
                                      clsname + " class, so " + clsname + 
-                                     ".is_valid() should be implemented " +
-                                     "(as a staticmethod.)")
-            elif not isinstance(namespace['is_valid'], staticmethod):
-                raise GeneratorError(clsname + 
-                                     ".is_valid() should be implemented " +
-                                     "(as a staticmethod.)")
+                                     ".is_valid() should be implemented.")
 
+            # error checking complete: the generator mixin is silently attached
+            # to the state class
             cls.generator = generator
             cls.generator.graph = graph
             cls.generator.operations = cls.operations
@@ -130,7 +115,9 @@ class State(metaclass=StateMeta):
             - Define methods that modify the state and decorate them with
               @search.operator and @search.action, so that they
               can serve as operators during search.
-            - Attach an appropriate Generator subclass.
+            - Provide a Generator subclass as a mixin and implement the 
+              operations() method OR create one or more distinct Generator
+              subclasses and attach them to the state class.
     """
 
     # A search typically generates many State objects, so __slots__ is used 
@@ -205,21 +192,10 @@ class State(metaclass=StateMeta):
             object and then initialize it (see copy() documentation).
         """
         return cls.__new__(cls)
-
-    ### generator-related methods
-
-    @abstractmethod
-    def operations(self):
-        """ Yields the operations that can be performed on a state.
-
-            This is a class method so that it can (possibly) use auxillary
-            class methods.
-        """
-        raise NotImplementedError
-
     
     # attach is a class method, until we find a reason to attach different
     # generators to different state instances of the same class.
+    # Q: should attach belong to State or Generator?
     @classmethod
     def attach(cls, generator):
         """ Attaches a Generator subclass to a State subclass.
@@ -234,11 +210,36 @@ class State(metaclass=StateMeta):
             compatible.       
         """
         if cls.generator is not None:
-            raise GeneratorError("A " + cls.generator.__name__ + " has already been attached to " + cls.__name__)
+            # there is already a generator
+            raise GeneratorError("A " + cls.generator.__name__ +
+                                 " has already been attached to " + cls.__name__)
+        elif not hasattr(generator, 'requires'):
+            # there is no 'requires' attribute in the generator
+            raise GeneratorError(generator.__name__ + 
+                                 " should have a 'requires' class attribute.")
         elif not issubclass(cls, generator.requires):
-            raise GeneratorError("A " + generator.__name__ + " can only be attached to (subclasses of) " + generator.requires.__name__)
+            # the generator's 'requires' attribute is incompatible with this class
+            raise GeneratorError(generator.__name__ + " can only be attached to (subclasses of) " + 
+                                 generator.requires.__name__)
+        elif not hasattr(generator, 'graph'):
+            # there is no 'graph' attribute in the generator
+            raise GeneratorError(generator.__name__ + " should have a boolean 'graph' class attribute.")
+        elif getattr(generator, 'graph') not in (True, False):
+            # the 'graph' attribute in the generator is not boolean
+            raise GeneratorError(generator.__name__ + " should have a boolean 'graph' class attribute.")
         else:
+            # error checking done, now attach generator
             cls.generator = generator
+
+        '''
+        elif not isinstance(generator.operations, staticmethod):
+                # the operations() method is not static
+                raise GeneratorError(generator.__name__ + ".operations() should be a @staticmethod.")
+        elif issubclass(generator, InconsistentGenerator) and not isinstance(generator.is_valid, staticmethod):
+            # the is_valid() method is not static
+            raise GeneratorError(generator.__name__ + ".is_valid() should be a @staticmethod.")
+        '''
+
         
 class Generator():
     """ Generates all possible operations applicable to a particular state.
