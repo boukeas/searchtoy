@@ -36,6 +36,7 @@ import searchtoy
 
 ############ step 1: representation of problem-specific state
 
+#class crossState(searchtoy.State, searchtoy.InconsistentGenerator):
 class crossState(searchtoy.State):
     """ Instances of the crossState class hold the current state of the
         river-crossing problem.
@@ -95,7 +96,38 @@ class crossState(searchtoy.State):
         """
         self.positions[what] = self.positions["farmer"] = self.reverse[self.positions["farmer"]]
 
+    '''
+    ### generator-related methods
 
+    @staticmethod
+    def is_valid(self):
+        """ Checks if a state is valid and returns True or False.
+            
+            In this case, a problem state is valid when the sheep is not left
+            with the sheep or the cabbage.
+        """
+        return not (self.positions["wolf"] == self.positions["sheep"] != self.positions["farmer"] or
+                    self.positions["sheep"] == self.positions["cabbage"] != self.positions["farmer"])
+
+    @staticmethod
+    def operations(self):
+        """ Yields the operations that can be performed on a state.
+
+            In this case, operations involve either the farmer crossing the
+            river alone, or carrying any actor on the same side with him.
+
+            Since this is an incosistent generator, there is no consideration
+            of 'legality' on the generated states. This is taken care of by the
+            is_valid() method.
+        """
+        yield self.operators.cross()
+        for what in ("wolf", "cabbage", "sheep"):
+            if self.positions[what] == self.positions["farmer"]:
+                yield self.operators.carry(what)
+
+    '''
+
+#'''
 ############ step 2: generating successor states
 
 class crossGenerator(searchtoy.InconsistentGenerator):
@@ -130,7 +162,7 @@ class crossGenerator(searchtoy.InconsistentGenerator):
         for what in ("wolf", "cabbage", "sheep"):
             if state.positions[what] == state.positions["farmer"]:
                 yield state.operators.carry(what)
-
+#'''
 
 ############ step 3: problem definition and search
 
