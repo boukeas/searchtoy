@@ -36,14 +36,9 @@ import searchtoy
 
 # representation of problem-specific state
 
-class crossState(searchtoy.State, searchtoy.InconsistentGenerator):
+class crossState(searchtoy.State):
     """ Instances of the crossState class hold the current state of the
         river-crossing problem.
-
-        An InconsistentGenerator is used as a mixin class, adding the
-        generator's methods (i.e operations() and is_valid()) to crossState's
-        interface. Therefore, crossState can produce its own successors
-        without the need to construct an explicit generator and attach it.
 
         Attribute (in slots):
 
@@ -103,18 +98,28 @@ class crossState(searchtoy.State, searchtoy.InconsistentGenerator):
         """
         self.positions[what] = self.positions["farmer"] = self.reverse[self.positions["farmer"]]
 
-    # generator-related methods
 
-    def is_valid(self):
+# generating successor states
+
+class crossGenerator(searchtoy.InconsistentGenerator):
+    """ Generates all possible operations applicable to a particular state.
+    """
+
+    graph = True
+    requires = crossState
+
+    @staticmethod
+    def is_valid(state):
         """ Checks if a state is valid and returns True or False.
             
             In this case, a problem state is valid when the sheep is not left
             with the sheep or the cabbage.
         """
-        return not (self.positions["wolf"] == self.positions["sheep"] != self.positions["farmer"] or
-                    self.positions["sheep"] == self.positions["cabbage"] != self.positions["farmer"])
+        return not (state.positions["wolf"] == state.positions["sheep"] != state.positions["farmer"] or
+                    state.positions["sheep"] == state.positions["cabbage"] != state.positions["farmer"])
 
-    def operations(self):
+    @staticmethod
+    def operations(state):
         """ Yields the operations that can be performed on a state.
 
             In this case, operations involve either the farmer crossing the
@@ -124,10 +129,10 @@ class crossState(searchtoy.State, searchtoy.InconsistentGenerator):
             of 'legality' on the generated states. This is taken care of by the
             is_valid() method.
         """
-        yield self.operators.cross()
+        yield state.operators.cross()
         for what in ("wolf", "cabbage", "sheep"):
-            if self.positions[what] == self.positions["farmer"]:
-                yield self.operators.carry(what)
+            if state.positions[what] == state.positions["farmer"]:
+                yield state.operators.carry(what)
 
 
 # command-line arguments
@@ -141,7 +146,9 @@ parser.add_argument('--method', choices=searchtoy.blind_methods,
 settings = parser.parse_args()
 
 # problem and method
-crossing = searchtoy.Problem(crossState(), crossState.all_across)
+initial = crossState()
+initial.attach(crossGenerator)
+crossing = searchtoy.Problem(initial, crossState.all_across)
 method = getattr(searchtoy, settings.method)()
 
 # single solution

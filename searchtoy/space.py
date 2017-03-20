@@ -227,18 +227,16 @@ class State(metaclass=StateMeta):
         elif getattr(generator, 'graph') not in (True, False):
             # the 'graph' attribute in the generator is not boolean
             raise GeneratorError(generator.__name__ + " should have a boolean 'graph' class attribute.")
+        elif not isinstance(generator.__dict__['operations'], staticmethod):
+            # the operations() method is not static
+            raise GeneratorError(generator.__name__ + ".operations() should be a @staticmethod.")
+        elif issubclass(generator, InconsistentGenerator) and not isinstance(generator.__dict__['is_valid'], staticmethod):
+            # the is_valid() method is not static
+            raise GeneratorError(generator.__name__ + ".is_valid() should be a @staticmethod.")
+
         else:
             # error checking done, now attach generator
             cls.generator = generator
-
-        '''
-        elif not isinstance(generator.operations, staticmethod):
-                # the operations() method is not static
-                raise GeneratorError(generator.__name__ + ".operations() should be a @staticmethod.")
-        elif issubclass(generator, InconsistentGenerator) and not isinstance(generator.is_valid, staticmethod):
-            # the is_valid() method is not static
-            raise GeneratorError(generator.__name__ + ".is_valid() should be a @staticmethod.")
-        '''
 
         
 class Generator():
