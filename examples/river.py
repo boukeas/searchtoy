@@ -34,6 +34,7 @@ from collections import OrderedDict
 
 import searchtoy
 
+
 # representation of problem-specific state
 
 class crossState(searchtoy.State, searchtoy.InconsistentGenerator):
