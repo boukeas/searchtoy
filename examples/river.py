@@ -1,10 +1,13 @@
 """
-CROSSING A RIVER WITH A WOLF, A CABBAGE AND A GOAT
+A WOLF, A GOAT AND A CABBAGE
+(description from Algorithmic Puzzles, by Anany and Maria Levitin)
 
-A farmer needs to cross a river with a little boat. He has a wolf, a cabbage
-and a goat that he needs to take with him across the river. Because of the size
-of the boat, he can only carry across a single object at a time. But the goat
-cannot be left alone neither with the wolf, nor with the cabbage.
+A man finds himself on a riverbank with a wolf, a goat, and a head of
+cabbage. He needs to transport all three to the other side of the river in
+his boat. However, the boat has room for only the man himself and one
+other item (either the wolf, the goat, or the cabbage). In his absence, the
+wolf would eat the goat, and the goat would eat the cabbage. Show how
+the man can get all these "passengers" to the other side.
 
 
 Copyright 2017 George Boukeas (boukeas@gmail.com)
@@ -132,7 +135,7 @@ class crossState(searchtoy.State, searchtoy.InconsistentGenerator):
 
 
 # command-line arguments
-parser = argparse.ArgumentParser(description="Solves the N-Queens problem.")
+parser = argparse.ArgumentParser(description="Solves the wolf, cabbage and goat problem.")
 
 # generic
 parser.add_argument('--method', choices=searchtoy.blind_methods,

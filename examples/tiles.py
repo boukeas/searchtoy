@@ -1,5 +1,11 @@
 """
 THE SLIDING TILES PUZZLE (a.k.a. 8-puzzle, 15-puzzle, etc)
+(adapted from Algorithmic Puzzles, by Anany and Maria Levitin)
+
+This famous puzzle consists of n×n square tiles numbered from 1 to (n×n)-1 
+which are placed in a n×n box, leaving one square empty. The goal is to
+reposition the tiles from a given starting arrangement by sliding them one at
+a time into the configuration in which the tiles are ordered sequentially.
 
 
 Copyright 2017 George Boukeas (boukeas@gmail.com)
@@ -212,7 +218,7 @@ def swap(c, a, b):
 
 
 # command-line arguments
-parser = argparse.ArgumentParser(description="Solves the sliding puzzle problem.")
+parser = argparse.ArgumentParser(description="Solves the sliding tile puzzle.")
 
 # generic
 parser.add_argument('--method', 
