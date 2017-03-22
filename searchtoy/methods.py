@@ -173,9 +173,9 @@ class Method(ABC):
             current = next.send(None)
             while True:
                 solution = problem.is_solution(current.state)
-                below_upper_bound = upper_bound is None or current.cost < upper_bound
+                below_upper_bound = upper_bound is None or current.cost <= upper_bound
 
-                if solution:
+                if solution and below_upper_bound:
                     # [replaced] due to the counter decorator 
                     # self.nb_solutions += 1
                     yield current
