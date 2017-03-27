@@ -67,19 +67,6 @@ class StateMeta(type):
         elif len(generator_bases) == 1:
             # this is the Generator mixin
             generator = generator_bases[0]
-            if 'operations' not in namespace:
-                # the operations() method is not implemented
-                raise GeneratorError(generator.__name__ + 
-                                     " has been used as a mixin to the " + 
-                                     clsname + " class, so " + clsname + 
-                                     ".operations() should be implemented.")
-            if issubclass(generator, InconsistentGenerator):
-                # the is_valid() method is not implemented
-                if 'is_valid' not in namespace:
-                    raise GeneratorError("InconsistentGenerator " +
-                                     "has been used as a mixin to the " + 
-                                     clsname + " class, so " + clsname + 
-                                     ".is_valid() should be implemented.")
 
             # error checking complete: the generator mixin is silently attached
             # to the state class
