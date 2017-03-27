@@ -67,17 +67,17 @@ class QueensState(searchtoy.State, searchtoy.ConsistentGenerator, graph=False):
                        if row is not None else "."
                        for row in self.rows).__hash__()
 
-    def is_complete(self):
-        """ Checks whether there is a queen in every row.
-        """
-        return not any(row is None for row in self.rows)
-
     def copy(self):
         """ Returns a new state object that is a copy of self.
         """
         new_object = type(self).empty()
         new_object.rows = self.rows.copy()
         return new_object
+
+    def is_complete(self):
+        """ Checks whether there is a queen in every row.
+        """
+        return not any(row is None for row in self.rows)
 
     # operator-related methods
 
