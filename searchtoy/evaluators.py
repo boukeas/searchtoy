@@ -83,4 +83,4 @@ def evaluator(function):
             method = DepthFirst(evaluator=heuristic)
 
     """
-    return EvaluatorMeta(function.__name__, (Evaluator,), {'evaluate': function})
+    return EvaluatorMeta(function.__name__, (Evaluator,), {'evaluate': staticmethod(function)})
