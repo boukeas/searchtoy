@@ -21,5 +21,5 @@ actually do something useful. Therefore the library's code can also act as a
 showcase for several python idioms such as generators, decorators and
 metaclasses.
 
-The searchtoy code is lisenced under the
+The searchtoy code is licensed under the
 [MIT License](https://github.com/boukeas/sherlock/blob/master/LICENSE).
