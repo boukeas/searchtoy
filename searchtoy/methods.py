@@ -2,11 +2,11 @@
 
 from abc import ABC
 
-from .containers import Stack, OrderedStack, Queue, OrderedQueue, PriorityQueue
+from .containers import Stack, Queue, PrioritizedStack, PrioritizedQueue, PriorityQueue
 from .space import Node
 from .exceptions import GeneratorError
 
-methods = ['DepthFirst', 'BreadthFirst', 'BestFirst']
+methods = ['DepthFirst', 'InformedDepthFirst', 'BreadthFirst', 'InformedBreadthFirst', 'BestFirst']
 blind_methods = ['DepthFirst', 'BreadthFirst']
 
 __all__ = methods + ['methods', 'blind_methods']
@@ -215,31 +215,45 @@ class Method(ABC):
 class DepthFirst(Method):
     """ Depth-first search.
 
+        The container used in depth-first search is a stack.
+    """
+
+    def __init__(self):
+        super().__init__(Stack())
+
+
+class InformedDepthFirst(Method):
+    """ Informed Depth-first search.
+
         The container used in depth-first search is a stack. A heuristic
-        evaluator may be used for ordering the nodes prior to pushing them
+        evaluator is used for ordering the nodes prior to pushing them
         on the stack.
     """
 
-    def __init__(self, evaluator=None):
-        if evaluator is None:
-            super().__init__(Stack())
-        else:
-            super().__init__(OrderedStack(evaluator))
+    def __init__(self, *, evaluator):
+        super().__init__(PrioritizedStack(evaluator=evaluator))
 
 
 class BreadthFirst(Method):
     """ Breadth-first search.
 
-        The container used in breadth-first search is a Queue. A heuristic
-        evaluator may be used for ordering the nodes prior to inserting them
+        The container used in breadth-first search is a queue.
+    """
+
+    def __init__(self):
+        super().__init__(Queue())
+
+
+class InformedBreadthFirst(Method):
+    """ Breadth-first search.
+
+        The container used in breadth-first search is a queue. A heuristic
+        evaluator is used for ordering the nodes prior to inserting them
         in the queue.
     """
 
-    def __init__(self, evaluator=None):
-        if evaluator is None:
-            super().__init__(Queue())
-        else:
-            super().__init__(OrderedQueue(evaluator))
+    def __init__(self, *, evaluator):
+        super().__init__(PrioritizedQueue(evaluator=evaluator))
 
 
 class BestFirst(Method):
@@ -249,8 +263,8 @@ class BestFirst(Method):
         using a heuristic evaluator for ordering the nodes.
     """
 
-    def __init__(self, evaluator):
-        super().__init__(PriorityQueue(evaluator))
+    def __init__(self, *, evaluator):
+        super().__init__(PriorityQueue(evaluator=evaluator))
 
 
 ### aux coroutine (and useful template for decorating generator functions)

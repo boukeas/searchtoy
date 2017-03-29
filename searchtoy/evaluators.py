@@ -1,6 +1,7 @@
 ### evaluators.py: heuristic state evaluation
 
 from abc import abstractmethod
+from random import randint
 
 from .exceptions import EvaluatorError
 
@@ -11,21 +12,18 @@ class EvaluatorMeta(type):
     """ A metaclass for creating Evaluator classes.
 
         The metaclass ensures that Evaluator instances cannot be created and
-        it checks that:
+        it checks that the 'evaluate' method of a (derived) Evaluator class
+        is static.
 
-        > the 'evaluate' method of a (derived) Evaluator class is static
-        > the 'order' method of a (derived) Evaluator class is a class method
-
-        If any of these conditions are not met, an EvaluatorError exception
-        is raised.
+        If these conditions are not met, an EvaluatorError exception is raised.
     """
 
     def __init__(cls, name, bases, namespace):
         super().__init__(name, bases, namespace)
         if 'evaluate' in namespace and not isinstance(namespace['evaluate'], staticmethod):
-            raise EvaluatorError(cls.__name__, "evaluate", "static")
-        if 'order' in namespace and not isinstance(namespace['order'], classmethod):
-            raise EvaluatorError(cls.__name__, "order", "class")
+            raise EvaluatorError(cls.__name__ + ".evaluate() should be a @staticmethod.")
+        if 'requires' not in namespace:
+            raise EvaluatorError(cls.__name__ + " should have a 'requires' class attribute.")
 
     def __call__(self, *args, **kwargs):
         raise EvaluatorError(self.__name__ + " objects cannot be created. Use the class object itself.")
@@ -42,6 +40,7 @@ class Evaluator(metaclass=EvaluatorMeta):
         search method, so that node evaluations can be performed. There is no
         need for creating instances of the class.
     """
+    requires = None
 
     @staticmethod
     @abstractmethod
@@ -50,32 +49,26 @@ class Evaluator(metaclass=EvaluatorMeta):
         """
         return NotImplementedError
 
-    @classmethod
-    def order(cls, nodes):
-        """ Sorts a list of nodes in descending order, using the evaluation
-            function as a sorting key.
-        """
-        nodes.sort(key = cls.evaluate)
-
-
 class RandomEvaluator(Evaluator):
-    """ An Evaluator that shuffles the nodes in random order.
+    """ An Evaluator that orders the nodes randomly.
+
+        The evaluate() method works by assigning a random positive integer
+        no greater than 1000 to each evaluated node.
     """
+    requires = None
 
-    import random
-
-    @classmethod
-    def order(cls, nodes):
-        cls.random.shuffle(nodes)
+    @staticmethod
+    def evaluate(node):
+        return randint(1,1000)
 
 
-def evaluator(function):
+def evaluator(*, requires):
     """ A function decorator that creates a subclass of the Evaluator
         class out of a function that is capable of evaluating nodes.
 
         Usage:
 
-            @evaluator
+            @evaluator(requires=<a state representation class>)
             def heuristic(node):
                 ...
 
@@ -83,4 +76,6 @@ def evaluator(function):
             method = DepthFirst(evaluator=heuristic)
 
     """
-    return EvaluatorMeta(function.__name__, (Evaluator,), {'evaluate': staticmethod(function)})
+    def wrapper(function):
+        return EvaluatorMeta(function.__name__, (Evaluator,), {'evaluate': staticmethod(function), 'requires': requires})
+    return wrapper

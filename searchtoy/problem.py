@@ -1,8 +1,8 @@
 ### problem.py: combinatorial search problem and different ways to ask for
 ###     a solution (get one, get all or optimize).
 
-from .exceptions import NoSolution
-
+from .exceptions import NoSolution, EvaluatorError
+from .containers import EvaluatedContainer
 
 class Problem:
     """ The Problem class corresponds to an instance of a search problem.
@@ -53,6 +53,13 @@ class Problem:
                 upper bound: the greatest acceptable cost for a solution (all
                     states with a greater cost are not explored further)
         """
+        if (issubclass(type(method.container), EvaluatedContainer) and 
+            not issubclass(type(self.start), method.container.evaluator.requires)):
+            raise EvaluatorError(method.container.evaluator.__name__ +
+                                 " can only evaluate (subclasses of) " +
+                                 method.container.evaluator.requires.__name__ +
+                                 " states.")
+
         return method.search(self, lower_bound, upper_bound)
 
     def solve(self, method, upper_bound=None):

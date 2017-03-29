@@ -193,6 +193,7 @@ class manhattanEvaluator(searchtoy.Evaluator):
         and vertical offset from its target position. The value of a sliding
         tile puzzle state is the sum of the manhattan distances of its tiles.
     """    
+    requires = tilesState
 
     @staticmethod
     def distance(i, j, size):
@@ -247,7 +248,7 @@ settings = parser.parse_args()
 initial = tilesState.fromFile(settings.filename)
 tile_puzzle = searchtoy.Problem(initial, tilesState.is_target)
 if settings.manhattan:
-    method = getattr(searchtoy, settings.method)(manhattanEvaluator)
+    method = getattr(searchtoy, settings.method)(evaluator=manhattanEvaluator)
 else:
     method = getattr(searchtoy, settings.method)()
 

@@ -4,8 +4,11 @@ from abc import ABC, abstractmethod
 from collections import deque
 from heapq import heappush, heappop, heapify
 
-containers = ['Stack', 'OrderedStack', 'Queue', 'OrderedQueue', 'PriorityQueue']
+containers = ['Stack', 'Queue', 'PrioritizedStack', 'PrioritizedQueue', 'PriorityQueue']
 __all__ = containers
+
+# cooperative multiple inheritance:
+# https://rhettinger.wordpress.com/2011/05/26/super-considered-super/
 
 
 class Container(ABC):
@@ -41,7 +44,6 @@ class Stack(list, Container):
     """
 
     def __init__(self):
-        super().__init__(self)
         self.insert = self.append
         self.remove = self.pop
         # could replace the def of extend
@@ -52,22 +54,6 @@ class Stack(list, Container):
         super().extend(reversed(nodes))
 
 
-class OrderedStack(Stack):
-    """ An 'ordered' stack Container uses an evaluator for sorting nodes before
-        pushing them on the top of stack.
-
-        Informed depth-first search uses an 'ordered' stack in order to explore
-        interesting branches earlier in the search.
-    """
-
-    def __init__(self, evaluator):
-        super().__init__()
-        self.evaluator = evaluator
-
-    def extend(self, nodes):
-        self.evaluator.order(nodes)
-        super().extend(nodes)
-
 class Queue(deque, Container):
     """ A queue Container for holding the search nodes. 
 
@@ -76,11 +62,35 @@ class Queue(deque, Container):
     """
 
     def __init__(self):
-        super().__init__(self)
         self.insert = self.append
         self.remove = self.popleft
 
-class OrderedQueue(Queue):
+###
+
+class EvaluatedContainer:
+    """ Use this as a mixin class, simply to signify that a container requires
+        an evaluator.
+    """
+    pass
+
+class PrioritizedStack(Stack, EvaluatedContainer):
+    """ A prioritized stack Container uses an evaluator for sorting nodes
+        before pushing them on the top of stack.
+
+        Informed depth-first search uses a prioritized stack in order to
+        explore interesting branches earlier in the search.
+    """
+
+    def __init__(self, *, evaluator):
+        super().__init__()
+        self.evaluator = evaluator
+
+    def extend(self, nodes):
+        nodes.sort(key=self.evaluator.evaluate)
+        super().extend(nodes)
+
+
+class PrioritizedQueue(Queue, EvaluatedContainer):
     """ An 'ordered' queue Container uses an evaluator for sorting nodes before
         inserting them in the back of the queue.
 
@@ -88,15 +98,16 @@ class OrderedQueue(Queue):
         interesting branches earlier in the search.
     """
 
-    def __init__(self, evaluator):
+    def __init__(self, *, evaluator):
         super().__init__()
         self.evaluator = evaluator
 
     def extend(self, nodes):
-        self.evaluator.order(nodes)
+        nodes.sort(key=self.evaluator.evaluate)
         super().extend(nodes)
 
-class PriorityQueue(list, Container):
+
+class PriorityQueue(list, EvaluatedContainer):
     """ A priority queue Container for holding the search nodes. 
 
         Informed search methods such as best-first search and A* employ a
@@ -110,22 +121,22 @@ class PriorityQueue(list, Container):
         (https://docs.python.org/3.4/library/heapq.html)
     """
 
-    def __init__(self, evaluator):
-        super().__init__(self)
+    def __init__(self, *, evaluator):
         self.count = 0
+        self.evaluator = evaluator
         self.evaluate = evaluator.evaluate
         # the following can be used to replace the def of extend
         # self.remove = lambda: partial(lambda heap: heapq.heappop(heap), self)()[2]
 
     def insert(self, node):
         self.count += 1
-        heappush(self, (self.evaluate(node), self.count, node))
+        heappush(self, (self.evaluator.evaluate(node), self.count, node))
 
     def remove(self):
        return heappop(self)[2]
 
     def extend(self, nodes):
-        newnodes = [(self.evaluate(node), count, node)
+        newnodes = [(self.evaluator.evaluate(node), count, node)
                     for count, node in enumerate(nodes, start=self.count+1)]
         super().extend(newnodes)
         self.count += len(nodes)

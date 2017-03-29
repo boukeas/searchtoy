@@ -106,6 +106,7 @@ class tourState(searchtoy.State, searchtoy.ConsistentGenerator, graph=True):
 
 class WarnsdorfState(tourState):
     """
+        # https://en.wikipedia.org/wiki/Knight%27s_tour
     """
 
     __slots__ = ('accessibility')
@@ -133,19 +134,7 @@ class WarnsdorfState(tourState):
             self.accessibility[(row, col)] -= 1
 
 
-'''
-# state evaluation
-class accessibilityEvaluator(search.Evaluator):
-
-    # https://en.wikipedia.org/wiki/Knight%27s_tour
-
-    def evaluate(self, node):
-        row, col = node.state.current
-        value = node.parent.state.accessibility[(row, col)]
-        return value
-'''
-
-@searchtoy.evaluator
+@searchtoy.evaluator(requires=WarnsdorfState)
 def Warnsdorf(node):
     return node.parent.state.accessibility[node.state.current]
 
