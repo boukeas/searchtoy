@@ -199,27 +199,35 @@ class State(metaclass=StateMeta):
         if cls.generator is not None:
             # there is already a generator
             raise GeneratorError("A " + cls.generator.__name__ +
-                                 " has already been attached to " + cls.__name__)
+                                 " has already been attached to " + 
+                                 cls.__name__)
         elif not hasattr(generator, 'requires'):
             # there is no 'requires' attribute in the generator
             raise GeneratorError(generator.__name__ + 
                                  " should have a 'requires' class attribute.")
         elif not issubclass(cls, generator.requires):
             # the generator's 'requires' attribute is incompatible with this class
-            raise GeneratorError(generator.__name__ + " can only be attached to (subclasses of) " + 
+            raise GeneratorError(generator.__name__ +
+                                 " can only be attached to (subclasses of) " +
                                  generator.requires.__name__)
         elif not hasattr(generator, 'graph'):
             # there is no 'graph' attribute in the generator
-            raise GeneratorError(generator.__name__ + " should have a boolean 'graph' class attribute.")
-        elif getattr(generator, 'graph') not in (True, False):
+            raise GeneratorError(generator.__name__ +
+                                 " should have a boolean 'graph' class attribute.")
+        elif generator.graph not in (True, False):
             # the 'graph' attribute in the generator is not boolean
-            raise GeneratorError(generator.__name__ + " should have a boolean 'graph' class attribute.")
-        elif not isinstance(generator.__dict__['operations'], staticmethod):
-            # the operations() method is not static
-            raise GeneratorError(generator.__name__ + ".operations() should be a @staticmethod.")
-        elif issubclass(generator, InconsistentGenerator) and not isinstance(generator.__dict__['is_valid'], staticmethod):
-            # the is_valid() method is not static
-            raise GeneratorError(generator.__name__ + ".is_valid() should be a @staticmethod.")
+            raise GeneratorError(generator.__name__ + 
+                                 " should have a boolean 'graph' class attribute.")
+#        elif not isinstance(generator.operations, classmethod):
+        elif not isinstance(seekattr(generator, 'operations'), classmethod):
+            # the operations() method is not a class method
+            raise GeneratorError(generator.__name__ + 
+                                 ".operations() should be a @classmethod.")
+        elif (issubclass(generator, InconsistentGenerator) and
+              not isinstance(generator.__dict__['is_valid'], classmethod)):
+            # the is_valid() method is not a class method
+            raise GeneratorError(generator.__name__ +
+                                 ".is_valid() should be a @classmethod.")
 
         else:
             # error checking done, now attach generator
@@ -249,6 +257,10 @@ class Generator():
         either True or False.
 
         Generators are used as class objects and are not to be instantiated.
+        
+        The operations() method is a classmethod because it may need to access
+        class attributes or call other, possible overloaded methods, of the 
+        derived generator class, so it needs to have access to them.
 
         Do not subclass directly from the Generator class. Derive only from
         one of its two sub-classes, depending on the way your Generator works.
@@ -260,9 +272,9 @@ class Generator():
                 attached to
     """ 
     
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def operations(state):
+    def operations(cls, state):
         """ Yields the operations that can be performed on a state.
 
             This is a class method so that it can (possibly) use auxillary
@@ -270,7 +282,7 @@ class Generator():
         """
         raise NotImplementedError
 
-    @staticmethod
+    @classmethod
     @abstractmethod
     def successors(node):
         """ Yields a node's successor nodes.
@@ -315,9 +327,9 @@ class InconsistentGenerator(Generator):
         methods.
     """
     
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def is_valid(self):
+    def is_valid(state):
         """ Checks if a state is valid and returns True or False.
         """
         raise NotImplementedError
@@ -643,4 +655,13 @@ def action(*args, **kwargs):
         return mark
     else:
         raise MalformedOperator
+
+
+# auxillary
+
+def seekattr(obj, attr):
+    for cls in obj.__mro__:
+        if attr in cls.__dict__:
+            return cls.__dict__[attr]
+    raise AttributeError
 
