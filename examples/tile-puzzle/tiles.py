@@ -2,7 +2,7 @@
 THE SLIDING TILES PUZZLE (a.k.a. 8-puzzle, 15-puzzle, etc)
 (adapted from Algorithmic Puzzles, by Anany and Maria Levitin)
 
-This famous puzzle consists of n×n square tiles numbered from 1 to (n×n)-1 
+This famous puzzle consists of n×n square tiles numbered from 1 to (n×n)-1
 which are placed in a n×n box, leaving one square empty. The goal is to
 reposition the tiles from a given starting arrangement by sliding them one at
 a time into the configuration in which the tiles are ordered sequentially.
@@ -68,9 +68,10 @@ class tilesState(searchtoy.State, searchtoy.ConsistentGenerator):
         nb_tiles = self.size ** 2
         self.tiles = list(init)[:nb_tiles]
         self.blank = self.tiles.index(self.blank_element)
-        # the target is **always** the sorted list of tiles, 
+        # the target is **always** the sorted list of tiles,
         # with the blank tile last, i.e. on the lower left corner
-        cls.target = sorted(self.tiles[:self.blank] + self.tiles[self.blank+1:]) + [self.blank_element]
+        cls.target = sorted(self.tiles[:self.blank] +
+                            self.tiles[self.blank+1:]) + [self.blank_element]
 
     @staticmethod
     def fromFile(filename):
@@ -93,7 +94,8 @@ class tilesState(searchtoy.State, searchtoy.ConsistentGenerator):
     def __str__(self):
         """ Returns a "nicely printable" string representation of the state.
         """
-        return "\n".join(" ".join("%2s" % str(tile) if tile != self.blank_element else " ."
+        return "\n".join(" ".join("%2s" % str(tile)
+                         if tile != self.blank_element else " ."
                          for tile in self.tiles[row*self.size:(row+1)*self.size])
                          for row in range(self.size))
 
@@ -105,14 +107,13 @@ class tilesState(searchtoy.State, searchtoy.ConsistentGenerator):
     def copy(self):
         """ Returns a new state object that is a copy of itself.
         """
-
         new_object = type(self).empty()
         new_object.tiles = self.tiles.copy()
         new_object.blank = self.blank
         return new_object
 
     def is_target(self):
-        """ Returns True when the puzzle has reached the target state, or 
+        """ Returns True when the puzzle has reached the target state, or
             False otherwise.
         """
         return self.tiles == type(self).target
@@ -192,7 +193,7 @@ class manhattanEvaluator(searchtoy.Evaluator):
         The manhattan distance of a single tile is the sum of its horizontal
         and vertical offset from its target position. The value of a sliding
         tile puzzle state is the sum of the manhattan distances of its tiles.
-    """    
+    """
     requires = tilesState
 
     @staticmethod
@@ -202,7 +203,7 @@ class manhattanEvaluator(searchtoy.Evaluator):
     @staticmethod
     def evaluate(node):
         return sum(manhattanEvaluator.distance(index,
-                                               tilesState.target.index(tile), 
+                                               tilesState.target.index(tile),
                                                node.state.size)
                    for index, tile in enumerate(node.state.tiles))
 
@@ -214,7 +215,7 @@ def swap(c, a, b):
         Arguments:
         - c: the container
         - a, b: the indices of the elements to be swapped
-    """ 
+    """
     c[a], c[b] = c[b], c[a]
 
 
@@ -222,9 +223,9 @@ def swap(c, a, b):
 parser = argparse.ArgumentParser(description="Solves the sliding tile puzzle.")
 
 # generic
-parser.add_argument('--method', 
+parser.add_argument('--method',
                     choices=searchtoy.methods,
-                    default='DepthFirst',                    
+                    default='DepthFirst',
                     help='the search method to be used')
 
 parser.add_argument('--solution-type', dest='solution_type',
@@ -233,9 +234,6 @@ parser.add_argument('--solution-type', dest='solution_type',
                     help='the type of solution required')
 
 # problem-specific
-parser.add_argument('--manhattan', 
-                    action='store_true',
-                    help='use the manhattan distance evaluator')
 
 parser.add_argument('-f', '--filename',
                     required=True,
@@ -243,18 +241,23 @@ parser.add_argument('-f', '--filename',
 
 settings = parser.parse_args()
 
-# problem and method
+# state class
+state_class = tilesState
 
-initial = tilesState.fromFile(settings.filename)
-tile_puzzle = searchtoy.Problem(initial, tilesState.is_target)
-if settings.manhattan:
-    method = getattr(searchtoy, settings.method)(evaluator=manhattanEvaluator)
-else:
+# problem
+problem = searchtoy.Problem(tilesState.fromFile(settings.filename),
+                            state_class.is_target)
+
+# method
+if settings.method in searchtoy.blind_methods:
     method = getattr(searchtoy, settings.method)()
+else:
+    method = getattr(searchtoy, settings.method)(evaluator=manhattanEvaluator)
 
+# solve, according to solution type required
 if settings.solution_type == 'all':
 
-    for solution in tile_puzzle.solutions(method):
+    for solution in problem.solutions(method):
         for state, operation in solution.path:
             print(state, operation, end='\n\n')
         print(solution.state, " [", solution.cost, "]", sep="")
@@ -265,13 +268,12 @@ if settings.solution_type == 'all':
 else:
 
     if settings.solution_type == 'optimal':
-        solution = tile_puzzle.optimize(method)
+        solution = problem.optimize(method)
     else:
-        solution = tile_puzzle.solve(method)
+        solution = problem.solve(method)
 
     for state, operation in solution.path:
         print(state, operation, end='\n\n')
     print(solution.state, " [", solution.cost, "]", sep="")
 
     print("explored", method.nb_explored, "states")
-
