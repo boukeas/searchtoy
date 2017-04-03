@@ -26,7 +26,6 @@ in an action of contract, tort or otherwise, arising from, out of or in
 connection with the software or the use or other dealings in the software.
 """
 
-
 import argparse
 import searchtoy
 
@@ -79,7 +78,7 @@ class QueensState(searchtoy.State, searchtoy.ConsistentGenerator, graph=False):
         """
         return not any(row is None for row in self.rows)
 
-    # operator-related methods
+    # operator
 
     @searchtoy.operator
     def place(self, the_row, the_col):
@@ -116,7 +115,7 @@ class QueensState(searchtoy.State, searchtoy.ConsistentGenerator, graph=False):
         else:
             for row in range(-d, the_row):
                 yield row, size - d - 1 - row
- 
+
     def operations(self):
         """ Yields the operations that can be performed on a state.
 
@@ -147,7 +146,6 @@ class QueensDomainsState(QueensState, graph=True):
             domains: a tuple, with a set for every row, containing the columns
                 than can be legally occupied by a queen.
     """
-
     __slots__ = ('domains')
 
     def __init__(self, size):
@@ -170,7 +168,7 @@ class QueensDomainsState(QueensState, graph=True):
         new_object.domains = tuple(domain.copy() for domain in self.domains)
         return new_object
 
-    # operator-related methods
+    # operator
 
     @searchtoy.operator
     def place(self, the_row, the_col):
@@ -248,9 +246,9 @@ parser = argparse.ArgumentParser(description="Solves the N-Queens problem.")
 
 # generic arguments
 
-parser.add_argument('--method', 
+parser.add_argument('--method',
                     choices=searchtoy.blind_methods,
-                    default='DepthFirst',                    
+                    default='DepthFirst',
                     help='the search method to be used')
 
 parser.add_argument('--solution-type', dest='solution_type',
@@ -272,14 +270,19 @@ settings = parser.parse_args()
 
 # problem and method
 
-if settings.domains: 
+# state class
+if settings.domains:
     state_class = QueensDomainsState
 else:
     state_class = QueensState
 
+# problem
 problem = searchtoy.Problem(state_class(settings.size), state_class.is_complete)
+
+# method
 method = getattr(searchtoy, settings.method)()
 
+# solve, according to solution type required
 if settings.solution_type == 'all':
 
     for solution in problem.solutions(method):
@@ -294,4 +297,3 @@ else:
     print(solution.state, end="\n\n")
 
     print("explored", method.nb_explored, "states")
-

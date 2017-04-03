@@ -16,6 +16,6 @@ the man can get all these "passengers" to the other side.
   space is a _graph_.
 - Evaluation: is a heuristic function available for evaluating nodes and
   guiding the search? No, the search is _blind_.
-- Cost: is there a cost function that needs to be minimized? No, the only cost
+- Cost: is there a cost function that needs to be minimized? **Yes**, the cost
   associated with a solution is its _depth_.
 - Solution path: The solution required is the _path_ to the goal state.
