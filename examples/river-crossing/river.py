@@ -62,13 +62,16 @@ class crossState(searchtoy.State, searchtoy.InconsistentGenerator):
     reverse = {"left": "right", "right": "left"}
 
     def __init__(self, farmer = "left", wolf = "left", cabbage = "left", sheep = "left"):
-        self.positions = OrderedDict([("farmer", farmer), ("wolf", wolf), ("cabbage", cabbage), ("sheep", sheep)])
+        self.positions = OrderedDict([("farmer", farmer), ("wolf", wolf),
+                                      ("cabbage", cabbage), ("sheep", sheep)])
 
     def __str__(self):
         """ Returns a "nicely printable" string representation of the state.
         """
-        return "\n".join([side + ": " + 
-                          ", ".join(what for what, where in self.positions.items() if where == side)
+        return "\n".join([side + ": " +
+                          ", ".join(what
+                                    for what, where in self.positions.items()
+                                    if where == side)
                           for side in ("left", "right")])
 
     def __hash__(self):
@@ -111,7 +114,7 @@ class crossState(searchtoy.State, searchtoy.InconsistentGenerator):
 
     def is_valid(self):
         """ Checks if a state is valid and returns True or False.
-            
+
             In this case, a problem state is valid when the sheep is not left
             with the sheep or the cabbage.
         """
@@ -139,7 +142,7 @@ parser = argparse.ArgumentParser(description="Solves the wolf, cabbage and goat 
 
 # generic
 parser.add_argument('--method', choices=searchtoy.blind_methods,
-                    default='DepthFirst',                    
+                    default='DepthFirst',
                     help='the search method to be used')
 
 settings = parser.parse_args()
@@ -149,7 +152,7 @@ crossing = searchtoy.Problem(crossState(), crossState.all_across)
 method = getattr(searchtoy, settings.method)()
 
 # single solution
-solution = crossing.solve(method)
+solution = crossing.optimal(method)
 for operation in solution.path.operations:
     print(operation)
 print(solution.state)

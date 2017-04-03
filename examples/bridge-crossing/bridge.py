@@ -46,7 +46,7 @@ import searchtoy
 
 # representation of problem-specific state
 
-class crossState(searchtoy.State, searchtoy.ConsistentGenerator):
+class crossState(searchtoy.State):
     """ Instances of the crossState class hold the current state of the
         bridge-crossing problem.
 
@@ -72,14 +72,17 @@ class crossState(searchtoy.State, searchtoy.ConsistentGenerator):
     def __str__(self):
         """ Returns a "nicely printable" string representation of the state.
         """
-        return "\n".join([side + ": " + 
-                          ", ".join(str(who) for who, where in self.positions.items() if where == side)
+        return "\n".join([side + ": " +
+                          ", ".join(str(who)
+                                        for who, where in self.positions.items()
+                                        if where == side)
                           for side in ("back", "across")])
 
     def __hash__(self):
         """ Returns a unique integer computed from the current state.
         """
-        return "".join("b" if position == "back" else "a" for position in self.positions.values()).__hash__()
+        return "".join("b" if position == "back" else "a"
+                       for position in self.positions.values()).__hash__()
 
     def all_across(self):
         """ Returns True when all actors have crossed the bridge, or False
@@ -102,7 +105,7 @@ class crossState(searchtoy.State, searchtoy.ConsistentGenerator):
         """
         self.positions[one] = self.positions[another] = self.positions["flashlight"] = self.reverse[self.positions["flashlight"]]
 
-    # generator-related methods
+    # auxillary and generator-related methods
 
     @property
     def flashlight(self):
@@ -111,40 +114,98 @@ class crossState(searchtoy.State, searchtoy.ConsistentGenerator):
         return self.positions["flashlight"]
 
     def on_side(self, side):
-        """ Returns the persons on a particular side (as a generator).
-        """
-        return (who for who in self.positions if self.positions[who] == side and who != "flashlight")
+        """ Yields the persons on a particular side.
 
-    def operations(self):
+            Note that, in the current implementation, persons are sorted during
+            __init__ and that order is preserved by on_side(), since an
+            OrderedDict is used to represent the state.
+        """
+        return (who for who in self.positions
+                if self.positions[who] == side and who != "flashlight")
+
+
+# generating successor states
+
+class SoloFirstGenerator(searchtoy.ConsistentGenerator):
+    """ Generates all possible operations applicable to a particular state.
+    """
+
+    graph = True
+    requires = crossState
+
+    @classmethod
+    def operations(cls, state):
         """ Yields the operations that can be performed on a state.
 
             In this case, operations involve either one or two persons crossing
-            the bridge with the flashlight.
-
-            Note that solo crossings are yielded before paired ones and that
-            affects the number of nodes generated. It could be the other way
-            around or... solo crossings could be yielded first only if the 
-            flashlight is across and vice versa.
-    
-            Also note that persons are selected in the order yielded by
-            on_side() and are not sorted but, in the current implementation,
-            they are sorted in __init__, where an OrderedDict is used to
-            preserve that order.
+            the bridge with the flashlight. Note that solo crossings are yielded
+            before paired ones and that affects the number of nodes generated.
         """
-        for single in self.on_side(self.flashlight):
-            yield self.operators.cross(single, cost=single)
-        for one, another in combinations(self.on_side(self.flashlight), 2):
-            yield self.operators.escort(one, another, 
-                                        cost=max(one, another))
+        for one in state.on_side(state.flashlight):
+            yield state.operators.cross(one, cost=one)
+        for one, another in combinations(state.on_side(state.flashlight), 2):
+            yield state.operators.escort(one, another,
+                                         cost=max(one, another))
+
+class PairsFirstGenerator(searchtoy.ConsistentGenerator):
+    """ Generates all possible operations applicable to a particular state.
+    """
+
+    graph = True
+    requires = crossState
+
+    @classmethod
+    def operations(cls, state):
+        """ Yields the operations that can be performed on a state.
+
+            In this case, operations involve either one or two persons crossing
+            the bridge with the flashlight. Note that pair crossings are yielded
+            before solo ones and that affects the number of nodes generated.
+        """
+        for one, another in combinations(state.on_side(state.flashlight), 2):
+            yield state.operators.escort(one, another,
+                                         cost=max(one, another))
+        for one in state.on_side(state.flashlight):
+            yield state.operators.cross(one, cost=one)
+
+
+class AdaptiveGenerator(searchtoy.ConsistentGenerator):
+    """ Generates all possible operations applicable to a particular state.
+    """
+
+    graph = True
+    requires = crossState
+
+    @classmethod
+    def operations(cls, state):
+        """ Yields the operations that can be performed on a state.
+
+            In this case, operations involve either one or two persons crossing
+            the bridge with the flashlight. Note that pair crossings are
+            yielded first when crossing the bridge, while solo crossings are
+            yielded first when crossing back.
+        """
+        if state.flashlight == 'back':
+            for one, another in combinations(state.on_side(state.flashlight), 2):
+                yield state.operators.escort(one, another,
+                                             cost=max(one, another))
+            for one in state.on_side(state.flashlight):
+                yield state.operators.cross(one, cost=one)
+        else:
+            for one in state.on_side(state.flashlight):
+                yield state.operators.cross(one, cost=one)
+            for one, another in combinations(state.on_side(state.flashlight), 2):
+                yield state.operators.escort(one, another,
+                                             cost=max(one, another))
 
 
 # command-line arguments
 parser = argparse.ArgumentParser(description="Solves the bridge crossing at night problem.")
 
-# generic
-parser.add_argument('--method', 
+# generic arguments
+parser.add_argument('--method',
                     choices=searchtoy.blind_methods,
-                    default='DepthFirst',                    
+                    default='DepthFirst',
                     help='the search method to be used')
 
 parser.add_argument('--solution-type', dest='solution_type',
@@ -156,13 +217,33 @@ parser.add_argument('-u', '--upper-bound', dest='upper_bound',
                     type=int,
                     help="an upper bound on the solution's cost")
 
+# problem-specific arguments
+
+parser.add_argument('-g', '--generator',
+                    choices=['solo', 'pairs', 'adaptive'],
+                    default='solo',
+                    help='the generator used for generating successor states')
+
 settings = parser.parse_args()
 
-# problem and method
+# state class
+state_class = crossState
 
-problem = searchtoy.Problem(crossState(), crossState.all_across)
+# generator
+if settings.generator == 'solo':
+    state_class.attach(SoloFirstGenerator)
+elif settings.generator == 'pairs':
+    state_class.attach(PairsFirstGenerator)
+else:
+    state_class.attach(AdaptiveGenerator)
+
+# problem
+problem = searchtoy.Problem(state_class(), state_class.all_across)
+
+# method
 method = getattr(searchtoy, settings.method)()
 
+# solve, according to solution type required
 if settings.solution_type == 'all':
 
     for solution in problem.solutions(method, upper_bound=settings.upper_bound):
@@ -185,5 +266,3 @@ else:
     print(solution.state, " [", solution.cost, "]", sep="")
 
     print("explored", method.nb_explored, "states")
-
-
