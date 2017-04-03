@@ -1,6 +1,32 @@
 """
 THE SWAP PUZZLE
 
+(The description is adapted from the excellent unplugged activity at:
+https://teachinglondoncomputing.org/resources/inspiring-unplugged-classroom-activities/the-swap-puzzle-activity/,
+although many online versions of the puzzle are also available.)
+
+The puzzle board is a linear array of 2*N + 1 squares. Start the game with N red
+pieces at one end of the board and N blue pieces at the other, with each square
+occupied by a single piece. The square in the middle should be the only square
+left empty at the start.
+
+Here's an example of the initial configuration, on a board with 7 squares,
+with 3 red pieces (denoted 'x') and 3 blue pieces (denoted 'o'):
+
+    [ x | x | x |   | o | o | o ]
+
+The aim of the game is to swap the position of the blue pieces with those of the
+red pieces. You must do it in as few moves as possible.
+
+There are two kinds of move:
+1. Move a piece to an adjacent empty square (forwards or backwards).
+2. Jump a single adjacent piece of any colour into an empty space (forwards or
+backwards).
+
+Here's an example of the final configuration, on a board with 7 squares:
+
+    [ o | o | o |   | x | x | x ]
+
 
 Copyright 2017 George Boukeas (boukeas@gmail.com)
 
@@ -33,9 +59,17 @@ import searchtoy
 # representation of problem-specific state
 
 class swapState(searchtoy.State):
-    """
-    """
+    """ Instances of the swapState class hold the current state of the
+        swap puzzle.
 
+        Attributes (in slots):
+            puzzle: a list, with each element corresponding to a board square
+            gap: the index of the empty square
+
+        Class Attributes:
+            size: the length of the board
+            target: the goal state
+    """
     __slots__ = ('puzzle', 'gap')
 
     size = None
@@ -44,7 +78,7 @@ class swapState(searchtoy.State):
     def __init__(self, size, symbol_left = "x", symbol_right = "o"):
         self.puzzle = size * [symbol_left] + [" "] + size * [symbol_right]
         self.gap = size
-        #
+        # set class attributes
         cls = type(self)
         cls.size = len(self.puzzle)
         cls.target = self.puzzle[::-1]
@@ -67,18 +101,17 @@ class swapState(searchtoy.State):
         new_object.gap = self.gap
         return new_object
 
-    # operator-related methods
+    # operators and operator-related methods
 
     def is_target(self):
+        """ Returns true if the current state of the puzzle is the goal state,
+            and False otherwise.
+        """
         return self.puzzle == self.target
 
-    def min_index(self):
-        return max(0, self.gap - 2)
-
-    def max_index(self):
-        return min(len(self.puzzle), self.gap + 3)
-
     def move(self, which):
+        """ Swaps the gap with the contents of the square at the specified index.
+        """
         swap(self.puzzle, self.gap, which)
         self.gap = which
 
@@ -102,9 +135,8 @@ class swapState(searchtoy.State):
 # generation of successor states
 
 class obviousGenerator(searchtoy.ConsistentGenerator):
+    """ Generates all possible operations applicable to a particular state.
     """
-    """
-
     requires = swapState
     graph = True
 
@@ -112,17 +144,24 @@ class obviousGenerator(searchtoy.ConsistentGenerator):
     def operations(cls, state):
         """ Yields the operations that can be performed on a state.
 
-            In this case...
+            In this case, operations involve sliding any of the two pieces that
+            lie next to the empty square, or jumping above any of those two
+            pieces. Note that when two consecutive squares next to the empty
+            square are occupied by pieces of the same color, it makes no sense
+            to differentiate between sliding and jumping.
+
+            The method first yields operations that make left-to-right moves
+            and then right-to-left moves.
         """
         gap = state.gap
-        # moves left to right
+        # moves (slides and jumps) left to right
         if gap > 1:
             yield state.operators.slide_right()
             if state.puzzle[gap - 1] != state.puzzle[gap - 2]:
                 yield state.operators.jump_right()
         elif state.gap == 1:
             yield state.operators.slide_right()
-        # moves right to left
+        # moves (slides and jumps) right to left
         if gap < state.size - 2:
             yield state.operators.slide_left()
             if state.puzzle[gap + 1] != state.puzzle[gap + 2]:
@@ -131,16 +170,22 @@ class obviousGenerator(searchtoy.ConsistentGenerator):
             yield state.operators.slide_left()
 
 class jumpyGenerator(searchtoy.ConsistentGenerator):
+    """ Generates all possible operations applicable to a particular state.
     """
-    """
-
     requires = swapState
     graph = True
 
-    def operations(self, state):
+    @classmethod
+    def operations(cls, state):
         """ Yields the operations that can be performed on a state.
 
-            In this case...
+            In this case, operations involve sliding any of the two pieces that
+            lie next to the empty square, or jumping above any of those two
+            pieces. Note that when two consecutive squares next to the empty
+            square are occupied by pieces of the same color, it makes no sense
+            to differentiate between sliding and jumping.
+
+            The method first yields moves than involve jumps and then slides.
         """
         gap = state.gap
         # jump left to right
@@ -161,25 +206,27 @@ class jumpyGenerator(searchtoy.ConsistentGenerator):
 
 # state evaluation
 
-# make occurrences_target a class attribute, you don't have to recompute every time
 @searchtoy.evaluator(requires=swapState)
 def distance(node):
+    """ Returns the distance between the node and the target state. The distance
+        is the sum of offsets of every single piece from its target position.
     """
-    """
+    # make occurrences_target a class attribute, shouldn't recompute every time
+    # compute the squares where each symbol occurs in node
     occurences = defaultdict(list)
     for i, symbol in enumerate(node.state.puzzle):
         occurences[symbol].append(i)
+    # compute the squares where each symbol occurs in the target
     occurences_target = defaultdict(list)
     for i, symbol in enumerate(node.state.target):
         occurences_target[symbol].append(i)
-
-    distance = 0
+    # compute the sum of distances
+    d = 0
     for symbol, positions in occurences.items():
-        positionsTarget = occurences_target[symbol]
-        for i in range(len(positions)):
-            distance += abs(positions[i] - positionsTarget[i])
-    
-    return distance
+        positions_target = occurences_target[symbol]
+        for index1, index2 in zip(positions, positions_target):
+            d += abs(index1 - index2 + 1)
+    return d
 
 
 # auxillary
@@ -193,9 +240,9 @@ parser = argparse.ArgumentParser(description="Solves the swap puzzle of size n")
 
 # generic arguments
 
-parser.add_argument('--method', 
+parser.add_argument('--method',
                     choices=searchtoy.methods,
-                    default='DepthFirst',                    
+                    default='DepthFirst',
                     help='the search method to be used')
 
 parser.add_argument('--solution-type', dest='solution_type',
@@ -213,10 +260,6 @@ parser.add_argument('--jumpy',
                     help='flag, try jumps before sliding',
                     action='store_true')
 
-parser.add_argument('--distance',
-                    help='flag, use distance from target heuristic for guiding search',
-                    action='store_true')
-
 settings = parser.parse_args()
 
 # state class
@@ -232,12 +275,12 @@ else:
 problem = searchtoy.Problem(state_class(settings.size), state_class.is_target)
 
 # method
-if settings.distance:
-    method = getattr(searchtoy, settings.method)(evaluator=distance)
-else:
+if settings.method in searchtoy.blind_methods:
     method = getattr(searchtoy, settings.method)()
+else:
+    method = getattr(searchtoy, settings.method)(evaluator=distance)
 
-# solve
+# solve, according to solution type required
 if settings.solution_type == 'all':
 
     for solution in problem.solutions(method):
