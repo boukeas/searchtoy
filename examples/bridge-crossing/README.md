@@ -16,12 +16,12 @@ flashlight, a total of 20 minutes have passed. Can they cross the bridge in
 
 ## Characteristics
 
-- Generator: are there different ways to generate the successor states? *Yes*,
+- Generator: are there different ways to generate the successor states? **Yes**,
   solo crossings could be favoured over paired crossings, or vice versa, or
   some combination depending on direction. This affects the number of nodes
   examined, even in such a small problem.
 - Evaluation: is a heuristic function available for evaluating nodes and
   guiding the search? No, the search is _blind_.
-- Cost: is there a cost function that needs to be minimized? *Yes*, it is the
+- Cost: is there a cost function that needs to be minimized? **Yes**, it is the
   _total amount of time_ required for all persons to cross the bridge.
 - Solution path: The solution required is the _path_ to the goal state.
