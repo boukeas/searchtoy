@@ -9,7 +9,7 @@ the library to solve typical combinatorial search problems. You can follow
 them through to see how you can use the library to solve your own search
 problems.
 
-In a nutshell, building a program to solve a search problem essentially 
+In a nutshell, building a program to solve a search problem essentially
 involves building a class to hold the problem _state representation_ and then
 building a _generator_ to define how new states can be created from existing
 one, by applying operators. Optionally, you can also build heuristic
@@ -23,3 +23,31 @@ metaclasses.
 
 The searchtoy code is licensed under the
 [MIT License](https://github.com/boukeas/sherlock/blob/master/LICENSE).
+
+## Why use this library?
+
+## Things you might want to check out
+
+## Installing searchtoy
+
+Start by cloning this [github repository](https://github.com/boukeas/searchtoy.git) or
+simply download the [.zip file](https://github.com/boukeas/searchtoy/archive/master.zip)
+and extract it.
+
+``cd`` into the directory containing ``searchtoy``'s code and install it.
+
+    pip install .
+
+If you like, you can install ``searchtoy`` in a virtual environment. Before installing,
+create and activate the environment:
+
+    virtualenv ~/environments/searchtoy
+    source ~/environments/searchtoy/bin/activate
+
+Here, ``~/environments/searchtoy`` is the directory where the virtual environment
+will be installed. You can modify this as you please. Play around and, when you 're
+done, deactivate the virtual environment.
+
+    deactivate
+
+The library will eventually be made available through the Python Package Index.
