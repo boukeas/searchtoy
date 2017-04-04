@@ -34,17 +34,21 @@ import searchtoy
 # representation of problem-specific state
 
 class sudokuState(searchtoy.State):
-        
-    __slots__ = ('board', 'nb_placed')
-    
-    def __init__(self, filename):
-        self.board = board(9)
+    """ Instances of the sudokuState class hold the current state of the
+        puzzle's board.
+
+        Attributes (in slots):
+            nb_placed: the number of squares filled with a number
+            board: a representation of the 9x9 puzzle board
+    """
+    __slots__ = ('nb_placed', 'board')
+
+    def __init__(self):
         self.nb_placed = 0
+        self.board = board()
         for row in range(9):
             for col in range(9):
                 self.board[row, col] = set(range(1, 10))
-        if filename is not None:
-            self.inputFromFile(filename)
 
     def __str__(self):
         """ Returns a "nicely printable" string representation of the state.
@@ -69,7 +73,9 @@ class sudokuState(searchtoy.State):
     def __hash__(self):
         """ Returns a unique integer computed from the current state.
         """
-        return "".join([str(self.board[row, col]) if type(self.board[row, col]) else "." for row in range(9) for col in range(9)]).__hash__()
+        return "".join([str(self.board[row, col])
+                       if type(self.board[row, col]) is int else "."
+                       for row in range(9) for col in range(9)]).__hash__()
 
     def copy(self):
         """ Returns a new state object that is a copy of self.
@@ -79,32 +85,36 @@ class sudokuState(searchtoy.State):
         new_object.board = self.board.copy()
         return new_object
 
-    def inputFromFile(self, filename):
+    @classmethod
+    def from_file(cls, filename):
+        """ Alternate constructor, returns a new tileState object from a file.
+
+            Arguments:
+                filename: name of the file containing the puzzle representation
         """
-        """
-        try:
-            f = open(filename)
-        except:
-            print("error: unable to open file", filename)
-            return None
-            
-        for row in range(9):
-            line = f.readline()
-            for col in range(9):
-                if line[col] != ".":
-                    number = int(line[col])
-                    #print("error: invalid input at row:", row + 1, "col: ", col + 1)                    
-                    self.place(row, col, number)
+        new_puzzle = cls()
+        ### warning: quick and dirty, absolutely no error checking here...
+        with open(filename) as f:
+            for row in range(9):
+                line = f.readline()
+                for col in range(9):
+                    if line[col] != ".":
+                        number = int(line[col])
+                        new_puzzle.place(row, col, number)
+        return new_puzzle
 
     def is_complete(self):
-        """
+        """ Returns True when the puzzle has been solved, or False otherwise.
         """
         return self.nb_placed == 81
 
-    def affectedSquares(self, the_row, the_col):
+    def affected(self, the_row, the_col):
+        """ Yields the positions, i.e. (row, col) pairs, that are affected
+            when the square at (the_row, the_col) is filled.
+
+            Essentially, the yielded squares are the ones on the same row, the
+            same column, or the same 3x3 block.
         """
-        """
-        affected = set()
         # same row
         for col in skiprange(0, 9, skip=the_col):
             yield the_row, col
@@ -120,22 +130,33 @@ class sudokuState(searchtoy.State):
 
     @searchtoy.operator
     def place(self, the_row, the_col, number):
-        self.board[the_row, the_col] = number
+        """ Fills the square at (the_row, the_col) with the number and
+            propagates to the affected domains.
+        """
         self.nb_placed += 1
-        for row, col in self.affectedSquares(the_row, the_col):
+        self.board[the_row, the_col] = number
+        for row, col in self.affected(the_row, the_col):
             domain = self.board[row, col]
             if type(domain) is set:
                 domain.discard(number)
 
+
 # generation of successor states
 
 class SequentialGenerator(searchtoy.ConsistentGenerator):
+    """ Yields the operations that can be performed on a state.
 
+        In this case, the operations are all legal number placements on the
+        first available square.
+    """
     requires = sudokuState
     graph = False
 
     @staticmethod
     def selectSquare(state):
+        """ Returns the position of the first square on the board not yet filled
+            with a number.
+        """
         for row in range(9):
             for col in range(9):
                 if type(state.board[row, col]) is set:
@@ -143,6 +164,11 @@ class SequentialGenerator(searchtoy.ConsistentGenerator):
 
     @classmethod
     def operations(cls, state):
+        """ Yields the operations that can be performed on a state.
+
+            In this case, operations involve filling a selected square with
+            all consistent numbers.
+        """
         row, col = cls.selectSquare(state)
         domain = state.board[row, col]
         for number in domain:
@@ -150,12 +176,22 @@ class SequentialGenerator(searchtoy.ConsistentGenerator):
 
 
 class MostConstrainedGenerator(SequentialGenerator):
+    """ Yields the operations that can be performed on a state.
 
+        In this case, the operations are all legal number placements on the
+        most constrained square, i.e. the square with the smallest domain.
+
+        The difference with the SequentialGenerator superclass lies simply
+        in the way the next square to be filled is selected.
+    """
     requires = sudokuState
     graph = True
 
     @staticmethod
     def selectSquare(state):
+        """ Returns the position of the first square on the board with the
+            smallest domain.
+        """
         _, position = min((len(state.board[row, col]), (row, col))
                           for row in range(9)
                           for col in range(9)
@@ -164,41 +200,33 @@ class MostConstrainedGenerator(SequentialGenerator):
 
 # auxillary
 
-class board:
-    """ An n x n board.
+class board(dict):
+    """ A dict holding the contents of the board. Every (row, col) pair,
+        is mapped either to an integer, which means the square has been filled,
+        or to its domain, i.e. the set of integers which can legally fill the
+        square.
     """
 
-    __slots__ = ('size', 'container')
-
-    def __init__(self, n, init = None):
-        self.size = n
-        self.container = {
-            (row, col) : init
-            for row in range(n)
-            for col in range(n) 
-        }
-
     def __getitem__(self, coords):
-        """ Returns the value at coords (which is a row, col pair).
+        """ Returns the value at coords (which is a row, col pair), or
+            None if none exists.
         """
-        return self.container[coords]
+        return self.get(coords)
 
     def __setitem__(self, coords, value):
         """ Sets the value at coords (which is a row, col pair).
         """
-        self.container[coords] = value
+        super().__setitem__(coords, value)
 
     def copy(self):
-        """
+        """ Returns a copy of the board.
         """
         new_board = type(self).__new__(type(self))
-        new_board.size = self.size
-        new_board.container = {}
-        for key, value in self.container.items():
+        for key, value in self.items():
             if type(value) is int:
-                new_board.container[key] = value
+                new_board[key] = value
             else:
-                new_board.container[key] = value.copy()
+                new_board[key] = value.copy()
         return new_board
 
 
@@ -215,10 +243,9 @@ def skiprange(start, end, *, skip):
 parser = argparse.ArgumentParser(description="Solves the sudoku puzzle.")
 
 # generic arguments
-
-parser.add_argument('--method', 
+parser.add_argument('--method',
                     choices=searchtoy.blind_methods,
-                    default='DepthFirst',                    
+                    default='DepthFirst',
                     help='the search method to be used')
 
 parser.add_argument('--solution-type', dest='solution_type',
@@ -227,7 +254,6 @@ parser.add_argument('--solution-type', dest='solution_type',
                     help='the type of solution required')
 
 # problem-specific arguments
-
 parser.add_argument('-f', '--filename', required=True,
                     help='the name of the file containing the puzzle')
 
@@ -237,30 +263,23 @@ parser.add_argument('--most-constrained', dest='most_constrained',
 
 settings = parser.parse_args()
 
-# problem and method
+# state class
+state_class = sudokuState
 
+# generator
 if settings.most_constrained:
-    state_class = sudokuState
     state_class.attach(MostConstrainedGenerator)
-    problem = searchtoy.Problem(state_class(settings.filename), state_class.is_complete)
-    method = getattr(searchtoy, settings.method)()
 else:
-    state_class = sudokuState
     state_class.attach(SequentialGenerator)
-    problem = searchtoy.Problem(state_class(settings.filename), state_class.is_complete)
-    method = getattr(searchtoy, settings.method)()
 
-if settings.solution_type == 'all':
+# problem
+problem = searchtoy.Problem(state_class.from_file(settings.filename),
+                            state_class.is_complete)
 
-    for solution in problem.solutions(method):
-        print(solution.state, end="\n\n")
+# method
+method = getattr(searchtoy, settings.method)()
 
-    print("explored", method.nb_explored, "states")
-    print("found", method.nb_solutions, "solutions")
-
-else:
-
-    solution = problem.solve(method)
-    print(solution.state, end="\n\n")
-
-    print("explored", method.nb_explored, "states")
+# solve (a single solution is sufficient)
+solution = problem.solve(method)
+print(solution.state)
+print("explored", method.nb_explored, "states")
