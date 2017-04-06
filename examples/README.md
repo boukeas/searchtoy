@@ -33,15 +33,15 @@ characteristics:
 Here is a concise table of the example problems that are included, along with
 their elementary characteristics as combinatorial optimization search problems:
 
-| Example                   | Generator   | Search Space | Evaluator | Optimize |
-| ---|---|---|--- |
-| Wolf, Cabbage and Goat    | Single      | Graph   | No  | Depth   |
-| Water buckets             | Single      | Graph   | No  | Depth   |
-| Knight's tour             | Single      | Graph   | Yes | No      |
-| Sliding tile puzzle       | Single      | Graph   | Yes | Depth   |
-| Bridge-crossing at night  | Multiple    | Graph   | No  | Cost    |
-| N-queens                  | Multiple (r)| Depends | No  | No      |
-| Sudoku                    | Multiple    | Depends | No  | No      |
-| Swap-puzzle               | Multiple    | Graph   | Yes | Depth   |
+Example                   | Generator   | Search Space | Evaluator | Optimize
+---                       | ---         | ---          |  ---      | ---
+Wolf, Cabbage and Goat    | Single      | Graph   | No  | Depth  
+Water buckets             | Single      | Graph   | No  | Depth
+Knight's tour             | Single      | Graph   | Yes | No
+Sliding tile puzzle       | Single      | Graph   | Yes | Depth
+Bridge-crossing at night  | Multiple    | Graph   | No  | Cost
+N-queens                  | Multiple (r)| Depends | No  | No
+Sudoku                    | Multiple    | Depends | No  | No
+Swap-puzzle               | Multiple    | Graph   | Yes | Depth
 
 For more information about each problem, check out the individual READMEs.
