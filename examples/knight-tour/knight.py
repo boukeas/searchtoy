@@ -188,10 +188,6 @@ parser.add_argument('--method',
 
 # problem-specific arguments
 
-parser.add_argument('--accessibility',
-                    help='flag, use the Warnsdorf heuristic',
-                    action='store_true')
-
 parser.add_argument('-i', '--initial',
                     required=True, nargs=2, type=int, metavar=('row','col'),
                     help='row and col where the knight is initially placed')
@@ -200,15 +196,15 @@ settings = parser.parse_args()
 
 # state class, problem and method
 row, col = settings.initial
-if settings.accessibility:
-    state_class = WarnsdorfState
-    problem = searchtoy.Problem(state_class(row, col), state_class.is_complete)
-    method = getattr(searchtoy, settings.method)(evaluator=Warnsdorf)
-else:
+if settings.method in searchtoy.blind_methods:
     state_class = tourState
     problem = searchtoy.Problem(state_class(row, col), state_class.is_complete)
     method = getattr(searchtoy, settings.method)()
-
+else:
+    state_class = WarnsdorfState
+    problem = searchtoy.Problem(state_class(row, col), state_class.is_complete)
+    method = getattr(searchtoy, settings.method)(evaluator=Warnsdorf)
+    
 # solve (a single solution is sufficient)
 solution = problem.solve(method)
 print(solution.state, end="\n\n")

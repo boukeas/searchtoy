@@ -152,7 +152,7 @@ crossing = searchtoy.Problem(crossState(), crossState.all_across)
 method = getattr(searchtoy, settings.method)()
 
 # single solution
-solution = crossing.optimal(method)
+solution = crossing.optimize(method)
 for operation in solution.path.operations:
     print(operation)
 print(solution.state)

@@ -3,12 +3,6 @@
 Fill the squares of a 9x9 board with numbers 1-9, so that no two rows, columns
 or 3x3 blocks contain the same number twice.
 
-## Instances
-
-In the ``instances/`` sub-directory, there are about 100 test puzzles taken from
-http://norvig.com/sudoku.html, which is generally a very interesting read on
-the subject.
-
 ## Characteristics
 
 - Generator: are there different ways to generate the successor states? **Yes**,
@@ -25,3 +19,20 @@ the subject.
   at the same depth.
 - Solution path: The solution required is the simply a goal state, _not_ the
   path leading to it.
+
+## Instances
+
+In the ``instances/`` sub-directory, there are about 100 test puzzles taken from
+http://norvig.com/sudoku.html, which is generally a very interesting read on
+the subject.
+
+## Usage
+
+For help on command-line parameters, use the `-h` switch.
+
+    python3 examples/sudoku/sudoku.py -h
+
+Solves the infamous 'hardest' sudoku by Arto Inkala, using a generator that
+branches on the next most constrained square.
+
+    python3 examples/sudoku/sudoku.py -f examples/sudoku/instances/sudoku.inkala --most-constrained

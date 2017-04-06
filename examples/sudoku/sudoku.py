@@ -248,10 +248,6 @@ parser.add_argument('--method',
                     default='DepthFirst',
                     help='the search method to be used')
 
-parser.add_argument('--solution-type', dest='solution_type',
-                    choices=['first', 'all', 'optimal'],
-                    default='first',
-                    help='the type of solution required')
 
 # problem-specific arguments
 parser.add_argument('-f', '--filename', required=True,

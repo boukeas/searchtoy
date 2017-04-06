@@ -15,11 +15,6 @@ Example of initial and target arrangements for the 8-puzzle (3x3):
     7  1  5        4  5  6
     .  6  4        7  8  .
 
-## Instances
-
-In the ``instances/`` sub-directory, you will find files with test instances,
-i.e. starting positions for the puzzle.
-
 ## Characteristics
 
 - Generator: are there different ways to generate the successor states? No.
@@ -31,3 +26,21 @@ i.e. starting positions for the puzzle.
 - Cost: is there a cost function that needs to be minimized? **Yes**, the cost
   associated with a solution is its _depth_.
 - Solution path: The solution required is the _path_ to the goal state.
+
+## Instances
+
+In the ``instances/`` sub-directory, you will find files with test instances,
+i.e. starting positions for the puzzle.
+
+## Usage
+
+For help on command-line parameters, use the `-h` switch.
+
+    python3 examples/swap-puzzle/swap.py -h
+
+Obtain an optimal solution, using one of the available generators.
+
+Obtain the first solution to a particular instance, using best-first search and
+the manhattan distance heuristic.
+
+    python3 examples/tile-puzzle/tiles.py --method BestFirst -f examples/tile-puzzle/instances/tilepuzzle.3

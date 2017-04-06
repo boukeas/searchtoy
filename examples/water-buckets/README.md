@@ -21,3 +21,14 @@ of the two buckets.
 - Cost: is there a cost function that needs to be minimized? **Yes**, the cost
   associated with a solution is its _depth_.
 - Solution path: The solution required is the _path_ to the goal state.
+
+## Usage
+
+For help on command-line parameters, use the `-h` switch.
+
+    python3 examples/water-buckets/water.py -h
+
+Find the fastest way to fill a bucket with 10 lt of water, using two buckets
+with capacities 7 lt and 11 lt.
+
+    python3 examples/water-buckets/water.py --solution-type optimal --buckets 7 11 --target 10

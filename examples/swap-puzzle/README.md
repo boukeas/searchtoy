@@ -34,3 +34,13 @@ Here's an example of the final configuration, on a board with 7 squares:
 - Cost: is there a cost function that needs to be minimized? **Yes**, the cost
   associated with a solution is its _depth_.
 - Solution path: The solution required is the _path_ to the goal state.
+
+## Usage
+
+For help on command-line parameters, use the `-h` switch.
+
+    python3 examples/swap-puzzle/swap.py -h
+
+Find the fastest way to solve the level-4 puzzle using breadth-first search.
+
+    python3 examples/swap-puzzle/swap.py --solution-type optimal --method BreadthFirst -n 4

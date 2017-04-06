@@ -25,3 +25,13 @@ flashlight, a total of 20 minutes have passed. Can they cross the bridge in
 - Cost: is there a cost function that needs to be minimized? **Yes**, it is the
   _total amount of time_ required for all persons to cross the bridge.
 - Solution path: The solution required is the _path_ to the goal state.
+
+## Usage
+
+For help on command-line parameters, use the `-h` switch.
+
+    python3 examples/bridge-crossing/bridge.py -h
+
+Obtain an optimal solution, using one of the available generators.
+
+    python3 examples/bridge-crossing/bridge.py --solution-type optimal --generator solo

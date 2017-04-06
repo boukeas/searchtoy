@@ -19,3 +19,14 @@ attack each other by being in the same column, row, or diagonal.
   at the same depth.
 - Solution path: The solution required is the simply a goal state, _not_ the
   path leading to it.
+
+## Usage
+
+For help on command-line parameters, use the `-h` switch.
+
+    python3 examples/n-queens/queens.py -h
+
+Obtain all solutions to the 10-queens problems, using the size of the domains to
+select the next row into which a queen will be placed.
+
+    python3 examples/n-queens/queens.py --solution-type all --size 10 --domains

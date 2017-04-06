@@ -18,3 +18,14 @@ chessboard exactly once.
 - Solution path: The solution required is the _path_ to the goal state. However,
   the state representation essentially contains the path, so the goal state is
   sufficient as a solution.
+
+## Usage
+
+For help on command-line parameters, use the `-h` switch.
+
+    python3 examples/knight-tour/knight.py -h
+
+Obtain a solution, starting from the top left corner of the board, using an
+accessibility heuristic.
+
+    python3 examples/knight-tour/knight.py --method InformedDepthFirst --initial 0 0

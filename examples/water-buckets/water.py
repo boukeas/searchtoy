@@ -129,7 +129,7 @@ class bucketState(searchtoy.State, searchtoy.ConsistentGenerator):
 
 
 # arguments
-parser = argparse.ArgumentParser(description="Solves the 7-11 water buckets problem")
+parser = argparse.ArgumentParser(description="Solves the water buckets problem")
 
 # generic arguments
 

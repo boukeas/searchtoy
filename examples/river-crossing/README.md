@@ -19,3 +19,13 @@ the man can get all these "passengers" to the other side.
 - Cost: is there a cost function that needs to be minimized? **Yes**, the cost
   associated with a solution is its _depth_.
 - Solution path: The solution required is the _path_ to the goal state.
+
+## Usage
+
+For help on command-line parameters, use the `-h` switch.
+
+    python3 examples/river-crossing/river.py -h
+
+Solve the problem:
+
+    python3 examples/bridge-crossing/bridge.py
