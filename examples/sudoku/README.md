@@ -3,13 +3,19 @@
 Fill the squares of a 9x9 board with numbers 1-9, so that no two rows, columns
 or 3x3 blocks contain the same number twice.
 
+## Instances
+
+In the ``instances/`` sub-directory, there are about 100 test puzzles taken from
+http://norvig.com/sudoku.html, which is generally a very interesting read on
+the subject.
+
 ## Characteristics
 
 - Generator: are there different ways to generate the successor states? **Yes**,
   depending on the order in which the board's rows are selected for placing a
   queen. The next available row can simply be selected at each step. In this
   case, the search space is a _tree_.
-  Alternatively, in an an _extended_ state representation, row _domains_ can be
+  Alternatively, row _domains_ can be
   maintained and the most constrained row (the one with the smallest domain) can
   be selected at each step. In this case, the search space is a _graph_.
 - Evaluation: is a heuristic function available for evaluating nodes and

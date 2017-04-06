@@ -15,6 +15,11 @@ Example of initial and target arrangements for the 8-puzzle (3x3):
     7  1  5        4  5  6
     .  6  4        7  8  .
 
+## Instances
+
+In the ``instances/`` sub-directory, you will find files with test instances,
+i.e. starting positions for the puzzle.
+
 ## Characteristics
 
 - Generator: are there different ways to generate the successor states? No.
