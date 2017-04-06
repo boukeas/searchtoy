@@ -42,12 +42,18 @@ import searchtoy
 # representation of problem-specific state
 
 class bucketState(searchtoy.State, searchtoy.ConsistentGenerator):
-    """
-    """
+    """ Instances of the bucketState class hold the current state of the
+        water buckets problem.
 
+        Attribute (in slots):
+
+            positions: a dict holding the contents of each bucket. For
+                convenience, the keys to the items of the dict are the bucket
+                capacities.
+    """
     __slots__ = ('buckets')
 
-    def __init__(self, *sizes):
+    def __init__(self, sizes):
         self.buckets = {size: 0 for size in sizes}
 
     def __str__(self):
@@ -102,12 +108,21 @@ class bucketState(searchtoy.State, searchtoy.ConsistentGenerator):
     # generator-related methods
 
     def operations(self):
+        """ Yields the operations that can be performed on a state.
+
+            In this case, operations involve filling non-full buckets,
+            emptying buckets with contents, or transfering water between
+            buckets, where possible.
+        """
+        # for each bucket, fill it, if possible
         for bucket in self.buckets:
             if self.capacity(bucket) > 0:
                 yield self.operators.fill(bucket)
+        # for each bucket, empty it, if possible
         for bucket in self.buckets:
             if self.buckets[bucket] > 0:
                 yield self.operators.drain(bucket)
+        # for each pair of buckets, make a transfer, if possible
         for source, destination in permutations(self.buckets.keys(), 2):
             if self.buckets[source] > 0 and self.capacity(destination) > 0:
                 yield self.operators.pour(source, destination)
@@ -130,7 +145,12 @@ parser.add_argument('--solution-type', dest='solution_type',
 
 # problem-specific arguments
 
-parser.add_argument('-t', '--target', type=int,
+parser.add_argument('--buckets', type=int,
+                    required=True,
+                    nargs='*', metavar='CAPACITY',
+                    help='the capacities of the buckets')
+
+parser.add_argument('--target', type=int,
                     required=True,
                     help='the target amount of water in any bucket')
 
@@ -140,7 +160,7 @@ settings = parser.parse_args()
 state_class = bucketState
 
 # problem
-problem = searchtoy.Problem(state_class(7, 11),
+problem = searchtoy.Problem(state_class(settings.buckets),
                             lambda state:settings.target in state.buckets.values())
 
 # method
