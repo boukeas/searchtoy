@@ -42,7 +42,7 @@ class StateMeta(type):
             if hasattr(attribute, 'operator')}
 
         # create the cls.operators namedtuple, from the decorated methods
-        cls.operators = namedtuple(clsname+'Operators', 
+        cls.operators = namedtuple(clsname+'Operators',
                                    operator_mapping.keys())(**operator_mapping)
 
         # now, undo the effects of the decoration: state operators should only
@@ -53,7 +53,7 @@ class StateMeta(type):
 
         # part 2: handle Generator mixins
 
-        # retrieve Generator mixins from bases        
+        # retrieve Generator mixins from bases
         generator_bases = [generator
                            for generator in bases
                            if issubclass(generator, ConsistentGenerator) or
@@ -62,7 +62,7 @@ class StateMeta(type):
         if len(generator_bases) > 1:
             # there are multiple Generator mixins
             raise GeneratorError("Multiple Generator subclasses provided as mixins to the State subclass. " +
-                                 "Use either one of ConsistentGenerator or InconsistentGenerator or " + 
+                                 "Use either one of ConsistentGenerator or InconsistentGenerator or " +
                                  "attach a derived Generator to the State.")
         elif len(generator_bases) == 1:
             # this is the Generator mixin
@@ -81,8 +81,9 @@ class State(metaclass=StateMeta):
     """ A generic State class for representing the state of the search problem.
 
         Classes derived from State hold all problem-specific information that
-        may be relevant during the search, including information required by a
-        Generator for generating successor states.
+        may be relevant during the search. This includes:
+        - Information required by a Generator for generating successor states.
+        - Information required by an Evaluator for evaluating states.
 
         States are search-method agnostic.
 
@@ -93,24 +94,24 @@ class State(metaclass=StateMeta):
         altered during search. Immutability is what makes the states hashable.
 
         For every search problem, you need to:
-    
+
         > Derive from State to create a subclass that holds problem-specific
           state information.
         > For this State subclass, you need to:
             - Implement __str__() and __hash__().
             - Override the copy() method (not necessary but highly advisable).
             - Define methods that modify the state and decorate them with
-              @search.operator and @search.action, so that they
+              @searchtoy.operator and @searchtoy.action, so that they
               can serve as operators during search.
-            - Provide a Generator subclass as a mixin and implement the 
+            - Provide a Generator subclass as a mixin and implement the
               operations() method OR create one or more distinct Generator
               subclasses and attach them to the state class.
     """
 
-    # A search typically generates many State objects, so __slots__ is used 
+    # A search typically generates many State objects, so __slots__ is used
     # to conserve memory. Consider using __slots__ in subclasses too.
     __slots__ = ()
-    
+
     # The 'generator' class attribute holds the generator that is attached to
     # the class and will be used to generate successor states during search
     generator = None
@@ -168,18 +169,18 @@ class State(metaclass=StateMeta):
             overriden and called explicitly.
         """
         return deepcopy(self)
-    
+
     @classmethod
     def empty(cls):
         """ Factory method that creates and returns a new, uninitialized state
-            object. 
+            object.
 
             This is to be used in the implementation of the copy() method in
             State subclasses, which will first use empty() to create the new
             object and then initialize it (see copy() documentation).
         """
         return cls.__new__(cls)
-    
+
     # attach is a class method, until we find a reason to attach different
     # generators to different state instances of the same class.
     # Q: should attach belong to State or Generator?
@@ -194,16 +195,16 @@ class State(metaclass=StateMeta):
             Each generator has a 'requires' class attribute, that stipulates
             which State subclass the generator can function with. In order for
             an attachment to be successful, the state and the generator must be
-            compatible.       
+            compatible.
         """
         if cls.generator is not None:
             # there is already a generator
             raise GeneratorError("A " + cls.generator.__name__ +
-                                 " has already been attached to " + 
+                                 " has already been attached to " +
                                  cls.__name__)
         elif not hasattr(generator, 'requires'):
             # there is no 'requires' attribute in the generator
-            raise GeneratorError(generator.__name__ + 
+            raise GeneratorError(generator.__name__ +
                                  " should have a 'requires' class attribute.")
         elif not issubclass(cls, generator.requires):
             # the generator's 'requires' attribute is incompatible with this class
@@ -216,12 +217,12 @@ class State(metaclass=StateMeta):
                                  " should have a boolean 'graph' class attribute.")
         elif generator.graph not in (True, False):
             # the 'graph' attribute in the generator is not boolean
-            raise GeneratorError(generator.__name__ + 
+            raise GeneratorError(generator.__name__ +
                                  " should have a boolean 'graph' class attribute.")
 #        elif not isinstance(generator.operations, classmethod):
         elif not isinstance(seekattr(generator, 'operations'), classmethod):
             # the operations() method is not a class method
-            raise GeneratorError(generator.__name__ + 
+            raise GeneratorError(generator.__name__ +
                                  ".operations() should be a @classmethod.")
         elif (issubclass(generator, InconsistentGenerator) and
               not isinstance(generator.__dict__['is_valid'], classmethod)):
@@ -233,7 +234,7 @@ class State(metaclass=StateMeta):
             # error checking done, now attach generator
             cls.generator = generator
 
-        
+
 class Generator():
     """ Generates all possible operations applicable to a particular state.
 
@@ -246,7 +247,7 @@ class Generator():
         task. State representations and generators are thus intertwined and
         each generator will *require* that it is attached to particular State
         subclass that contains the problem-specific information it needs.
-        
+
         For most problems there is more than one obvious way to generate
         successor states so, even for the same state representation, different
         generators may be interchangeable.
@@ -257,9 +258,9 @@ class Generator():
         either True or False.
 
         Generators are used as class objects and are not to be instantiated.
-        
+
         The operations() method is a classmethod because it may need to access
-        class attributes or call other, possible overloaded methods, of the 
+        class attributes or call other, possible overloaded methods, of the
         derived generator class, so it needs to have access to them.
 
         Do not subclass directly from the Generator class. Derive only from
@@ -270,8 +271,8 @@ class Generator():
                 space is a tree or a graph
             - requires: the State subclass that the generator needs to be
                 attached to
-    """ 
-    
+    """
+
     @classmethod
     @abstractmethod
     def operations(cls, state):
@@ -291,7 +292,7 @@ class Generator():
 
 
 class ConsistentGenerator(Generator):
-    """ A ConsistentGenerator yields operations that, when applied to a state, 
+    """ A ConsistentGenerator yields operations that, when applied to a state,
         produce successor states that are always valid.
 
         Subclasses of ConsistentGenerator should not override the successors
@@ -311,8 +312,8 @@ class ConsistentGenerator(Generator):
 
 
 class InconsistentGenerator(Generator):
-    """ A InconsistentGenerator yields operations that, when applied to a 
-        state, may produce successor states that are not valid. 
+    """ A InconsistentGenerator yields operations that, when applied to a
+        state, may produce successor states that are not valid.
 
         Note that an InconsistentGenerator still only yields *valid* successors
         through the successors() method. It makes use of the is_valid() method
@@ -326,7 +327,7 @@ class InconsistentGenerator(Generator):
         successors() method, but only implement the operations() and is_valid()
         methods.
     """
-    
+
     @classmethod
     @abstractmethod
     def is_valid(state):
@@ -350,7 +351,7 @@ class InconsistentGenerator(Generator):
 
 
 class Node:
-    """ Generic Node class for the nodes of the search space. 
+    """ Generic Node class for the nodes of the search space.
 
         Each node object contains a state object and additional search-related
         information. Nodes contain absolutely no problem-specific information
@@ -380,7 +381,7 @@ class Node:
         """ Returns a Path object that contains the history of states and
             operations that lead to the state in this node. This is typically
             called for solution states.
-        """            
+        """
         return Path(self)
 
 
@@ -389,7 +390,7 @@ class Path:
 
         Paths are necessary because, in some problems, a solution is not the
         goal state itself but rather the sequence of operations that leads from
-        the initial state to the goal state. 
+        the initial state to the goal state.
 
         A path is re-constructed starting from a terminal node (typically a
         goal node) and following the parent links back to the initial node.
@@ -454,9 +455,9 @@ class Operator:
         modified state, at a cost depending on the Operation's arguments.
 
         An Operator is created for every state method decorated with @operator.
-        
+
         Operators and Operations are the mechanism by which successor states
-        are produced by parent states during search. 
+        are produced by parent states during search.
     """
 
     __slots__ = ('operator')
@@ -465,9 +466,9 @@ class Operator:
         # the operator needs to 'remember' which method will be called
         # when it is applied
         self.operator = method
-        
+
     def __call__(self, *args, cost=1, **kwargs):
-        """ Calls the Operator. 
+        """ Calls the Operator.
 
             The call provides the Operator with specific (positional and
             keyword) arguments, as well as a cost. The call returns an
@@ -482,7 +483,7 @@ class Operation(namedtuple('OperationBase', ('operator', 'args', 'kwargs', 'cost
         A different Operation is created by every call to an Operator, i.e. for
         every pending application of a parametric operator to a state, with
         specific parameters.
-        
+
         Operators and Operations are the mechanism by which successor states
         are produced by parent states during search. Operations can directly
         be applied to states. Applying an Operation on a state returns a new
@@ -497,7 +498,7 @@ class Operation(namedtuple('OperationBase', ('operator', 'args', 'kwargs', 'cost
     __slots__ = ()
 
     def apply(self, state):
-        """ Returns a new state on which the Operation has been applied. 
+        """ Returns a new state on which the Operation has been applied.
         """
         new_state = state.copy()
         self.operator(new_state, *self.args, **self.kwargs)
@@ -507,7 +508,7 @@ class Operation(namedtuple('OperationBase', ('operator', 'args', 'kwargs', 'cost
         """ Returns a "nicely printable" string representation of the operator.
 
             Useful for printing the operations in a path.
-        """      
+        """
         arglist = []
         if self.args:
             arglist.extend([str(value) for value in self.args])
@@ -515,7 +516,7 @@ class Operation(namedtuple('OperationBase', ('operator', 'args', 'kwargs', 'cost
             arglist.extend([key + "=" + str(value) for key, value in self.kwargs.items()])
         return '[{cost}] {name}({arglist})'.format(
                                                    cost=self.cost,
-                                                   name=self.operator.__name__, 
+                                                   name=self.operator.__name__,
                                                    arglist=', '.join(arglist))
 
 
@@ -528,13 +529,13 @@ class Action:
 
         A single Action is created for every state method decorated with
         @action and are thus "cheaper" than Operations.
-        
+
         As special cases of Operators, Actions are part of the mechanism by
         which successor states are produced by parent states during search.
 
         The operations() method of generators is responsible for yielding the
         operators and/or actions that can be applied to a given state.
-    """ 
+    """
 
     __slots__ = ('operator', 'cost')
 
@@ -543,7 +544,7 @@ class Action:
         # when it is applied, and at what cost
         self.operator = method
         self.cost = cost
-        
+
     def __call__(self):
         """ Calls the Action.
 
@@ -589,7 +590,7 @@ def operator(method):
 
         Because of the StateMeta metaclass, all methods decorated as operators
         can also be accessed through the state's 'operators' attribute:
-            
+
             def operations(self, state):
                 ...
                 yield state.operators.modify_state(arg, kwarg=..., cost=arg)
@@ -628,7 +629,7 @@ def action(*args, **kwargs):
 
         Because of the StateMeta metaclass, all methods decorated as operators
         can also be accessed through the state's 'operators' attribute:
-            
+
             def operations(self, state):
                 ...
                 yield state.operators.modify_state()
@@ -664,4 +665,3 @@ def seekattr(obj, attr):
         if attr in cls.__dict__:
             return cls.__dict__[attr]
     raise AttributeError
-
