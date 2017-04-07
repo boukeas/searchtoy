@@ -86,20 +86,20 @@ When presented with a combinatorial search problem you need to solve with the
      `@searchtoy.operator` or `@search.action`, so that they
      can serve as operators during search.
 
-1. - If there is only a single obvious way to generate successor states _for
+1.  - If there is only a single obvious way to generate successor states _for
       a particular state representation_, then
       use either `ConsistentGenerator` or `InconsistentGenerator` as _mixins_
       to the `State` subclass and implement the `operations` generator method.
-  - If there are alternative ways to generate successor states _for
+    - If there are alternative ways to generate successor states _for
       a particular state representation_, then derive
       from `ConsistentGenerator` or `InconsistentGenerator` and implement
       the `operations` generator method for each one of the alternatives.
-  - Different generators may `require` different state representations. Also,
+    - Different generators may `require` different state representations. Also,
       some generators may induce a search space that is _tree-structured_.
-1. - Optionally, you can derive from the `Evaluator` class and implement one or
-    more heuristic evaluation functions. This will allow you to employ
-    _informed_ search methods.
-  - Different evaluators may `require` different state representations.
+1.  - Optionally, you can derive from the `Evaluator` class and implement one or
+      more heuristic evaluation functions. This will allow you to employ
+      _informed_ search methods.
+    - Different evaluators may `require` different state representations.
 1. Define the `Problem`'s initial state and goal predicate function.
 1. Invoke a search method and search for solutions!
 
