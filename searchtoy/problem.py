@@ -1,6 +1,8 @@
 ### problem.py: combinatorial search problem and different ways to ask for
 ###     a solution (get one, get all or optimize).
 
+from itertools import islice
+
 from .exceptions import NoSolution, EvaluatorError
 from .containers import EvaluatedContainer
 
@@ -12,12 +14,12 @@ class Problem:
         particular state constitutes a goal state. The class that the initial
         state belongs to specifies the state representation and its attached
         generator is responsible for generating subsequent search states.
-        
+
         For each problem that you need to solve, it is usually sufficient to
         create a simple instance of the Problem class. You typically don't have
         to subclass the Problem class, unless you need to implement an
         is_solution() method as part of the class.
-        
+
         Given a search method, you can solve the problem (ask for the first
         solution found by the method), perform optimization (ask for the best
         solution, probably within specific bounds) or generate all solutions.
@@ -32,17 +34,19 @@ class Problem:
         self.start = start
         if is_solution:
             self.is_solution = is_solution
-    
+
     def is_solution(self, state):
         """ Checks if a state is a solution to the problem instance.
-        
+
             If you provide an 'is_solution' function during instance
             construction (as a parameter), the you don't need to subclass
             Problem or implement this function.
         """
         raise NotImplementedError
 
-    def solutions(self, method, lower_bound=None, upper_bound=None):
+    def solutions(self, method,
+                  lower_bound=None, upper_bound=None,
+                  nb_solutions=None):
         """ Returns a generator that yields all the solutions to the problem
             instance.
 
@@ -52,15 +56,18 @@ class Problem:
                     search stops if a solution with this cost is obtained)
                 upper bound: the greatest acceptable cost for a solution (all
                     states with a greater cost are not explored further)
+                nb_solutions: the number of solutions to be generated, defaults
+                    to zero for all solutions
         """
-        if (issubclass(type(method.container), EvaluatedContainer) and 
+        if (issubclass(type(method.container), EvaluatedContainer) and
             not issubclass(type(self.start), method.container.evaluator.requires)):
             raise EvaluatorError(method.container.evaluator.__name__ +
                                  " can only evaluate (subclasses of) " +
                                  method.container.evaluator.requires.__name__ +
                                  " states.")
 
-        return method.search(self, lower_bound, upper_bound)
+        solution_generator = method.search(self, lower_bound, upper_bound)
+        return islice(solution_generator, 0, nb_solutions)
 
     def solve(self, method, upper_bound=None):
         """ Returns a single solution to the problem instance, the first one
@@ -92,4 +99,3 @@ class Problem:
         if best_solution is None:
             raise NoSolution(self)
         return best_solution
-
